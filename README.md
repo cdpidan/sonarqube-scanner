@@ -4,6 +4,10 @@ This plugin is designed to run SonarQube scans, handle the results, and convert 
 
 ## Main Features - v2.4.2
 
+- SonarScanner CLI upgraded to `7.3.0.5189`
+- Container runtime upgraded to `Java 21`
+- Added `sonar_scanner_java_opts` / `PLUGIN_SONAR_SCANNER_JAVA_OPTS` for SonarScanner CLI 6+ while keeping `sonar_scanner_opts` as a legacy alias
+
 - **New Parameter: `sonar_config_file`**
   - **Type**: Boolean
   - **Description**: If set to true, the plugin will utilize the specified `sonar-project.properties` file for the SonarQube analysis, if it exists. sonar_token param still mandatory.
@@ -12,7 +16,7 @@ This plugin is designed to run SonarQube scans, handle the results, and convert 
 
 - **New Parameter: `sonar_config_file_override`**
   - **Type**: Boolean
-  - **Description**: If set to true, the plugin will use the `sonar-project.properties` file and allow overriding of project key setting.
+  - **Description**: If set to true, the plugin will use the `sonar-project.properties` file and allow overriding of host, token, and project key settings.
   - **Environment Variable**: `PLUGIN_SONAR_CONFIG_FILE_OVERRIDE`
   - **Allowed Values**: `"true"`, `"false"`
 
@@ -46,13 +50,13 @@ This plugin is designed to run SonarQube scans, handle the results, and convert 
 
 ## Main Features - v2.4.1
 
-- Sonar CLI downgraded from 6.0.0.4432 to 5.0.1.3006
+- Sonar CLI upgraded from 5.0.1.3006 to 7.3.0.5189
 - Execute SonarQube scans and handle the results
 - Generate JUnit reports based on the scan results
 - Quality Gate status reporting + Metrics
 - Skip Scan and only check for Quality Gate status of a specific `analysisId` or last analysis
 - Waiting for Analysis and QualityGate now skips the wait if set to false - thanks @kangguru
-- Added `SONAR_SCANNER_OPTS` as a parameter, transforming into this env var during execution for Sonar JVM params - check the parameter detail section below
+- Added `SONAR_SCANNER_JAVA_OPTS` support for SonarScanner CLI 6+, while preserving `SONAR_SCANNER_OPTS` as a legacy alias
 
 **Note**: Use `branch` and `pr_key` parameters for accurate results matching when skipping the scan.
 
@@ -251,8 +255,10 @@ steps:
   - Example: `"taskid": "your-task-id"`
 - `skip_scan`: Skip Sonar analysis scan - get last analysis automatically.
   - Example: `"skip_scan": true`
-- `SONAR_SCANNER_OPTS`: pass any Sonar JVM param as env var during execution.
-  - Example: `"SONAR_SCANNER_OPTS": "--add-opens java.base/sun.nio.ch=ALL-UNNAMED --add-opens java.base/java.io=ALL-UNNAMED"`
+- `sonar_scanner_java_opts`: preferred JVM options parameter for SonarScanner CLI 6+.
+  - Example: `"sonar_scanner_java_opts": "--add-opens java.base/sun.nio.ch=ALL-UNNAMED --add-opens java.base/java.io=ALL-UNNAMED"`
+- `sonar_scanner_opts`: legacy alias kept for backward compatibility; internally mapped to `SONAR_SCANNER_JAVA_OPTS`.
+  - Example: `"sonar_scanner_opts": "--add-opens java.base/sun.nio.ch=ALL-UNNAMED --add-opens java.base/java.io=ALL-UNNAMED"`
 
 - **`sonar_config_file`**:
   - **Type**: Boolean
@@ -262,7 +268,7 @@ steps:
 
 - **`sonar_config_file_override`**:
   - **Type**: Boolean
-  - **Description**: Use `sonar-project.properties` if available and allow overriding of host, login, and/or project key settings.
+  - **Description**: Use `sonar-project.properties` if available and allow overriding of host, token, and/or project key settings.
   - **Environment Variable**: `PLUGIN_SONAR_CONFIG_FILE_OVERRIDE`
   - **Allowed Values**: `"true"`, `"false"`
 

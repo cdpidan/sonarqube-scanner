@@ -92,6 +92,7 @@ type (
 		WaitQualityGate            bool
 		Workspace                  string
 		SonarOPS                   string
+		SonarJavaOpts              string
 		UseSonarConfigFile         bool
 		UseSonarConfigFileOverride bool
 		QualityGateErrorExitCode   int
@@ -437,10 +438,10 @@ func (p Plugin) Exec() error {
 	if os.IsNotExist(err) || !p.Config.UseSonarConfigFile {
 		// If the configuration file does not exist, use the default parameters
 		fmt.Println("Configuration file not found or sonar_config_file not set to true. Using plugin's parameters.")
-		args = []string{
-			"-Dsonar.host.url=" + p.Config.Host,
-			"-Dsonar.login=" + p.Config.Token,
-		}
+		args = append(args,
+			"-Dsonar.host.url="+p.Config.Host,
+			"-Dsonar.token="+p.Config.Token,
+		)
 
 		if len(p.Config.Host) < 1 || len(p.Config.Token) < 1 {
 			fmt.Println("sonar_token and sonar_host params are mandatory.")
@@ -507,12 +508,6 @@ func (p Plugin) Exec() error {
 			args = append(args, params...)
 		}
 
-		if len(p.Config.SonarOPS) >= 1 {
-			existingOpts := os.Getenv("SONAR_SCANNER_OPTS")
-			newOpts := existingOpts + " " + p.Config.SonarOPS
-			os.Setenv("SONAR_SCANNER_OPTS", newOpts)
-		}
-
 	} else if err == nil {
 		// Configuration file exists, let sonar-scanner use it without additional parameters
 		fmt.Println("Configuration file found. Using sonar-project.properties.")
@@ -523,8 +518,8 @@ func (p Plugin) Exec() error {
 		}
 
 		if len(p.Config.Token) >= 1 {
-			fmt.Println("OVERRIDING sonar.login=" + p.Config.Token)
-			args = append(args, "-Dsonar.login="+p.Config.Token)
+			fmt.Println("OVERRIDING sonar.token=" + p.Config.Token)
+			args = append(args, "-Dsonar.token="+p.Config.Token)
 		} else {
 			fmt.Println("sonar_token param is also mandatory when using sonar-project.properties.")
 			fmt.Println("Exiting with status 2")
@@ -540,6 +535,10 @@ func (p Plugin) Exec() error {
 	} else {
 		// Error checking the file
 		return fmt.Errorf("error checking configuration file: %v", err)
+	}
+
+	if err := applyScannerJavaOpts(p.Config); err != nil {
+		return err
 	}
 
 	// Output sonar-scanner information
@@ -655,6 +654,41 @@ func (p Plugin) Exec() error {
 	}
 
 	return nil
+}
+
+func applyScannerJavaOpts(config Config) error {
+	combinedOpts := joinScannerOpts(
+		os.Getenv("SONAR_SCANNER_JAVA_OPTS"),
+		os.Getenv("SONAR_SCANNER_OPTS"),
+		config.SonarJavaOpts,
+		config.SonarOPS,
+	)
+	if combinedOpts == "" {
+		return nil
+	}
+
+	if err := os.Setenv("SONAR_SCANNER_JAVA_OPTS", combinedOpts); err != nil {
+		return err
+	}
+
+	// Keep the legacy env var populated for older pipeline configs.
+	if err := os.Setenv("SONAR_SCANNER_OPTS", combinedOpts); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func joinScannerOpts(values ...string) string {
+	parts := make([]string, 0, len(values))
+	for _, value := range values {
+		trimmed := strings.TrimSpace(value)
+		if trimmed != "" {
+			parts = append(parts, trimmed)
+		}
+	}
+
+	return strings.Join(parts, " ")
 }
 
 func displayQualityGateStatus(status string, qualityEnabled bool) {

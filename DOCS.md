@@ -73,7 +73,7 @@ steps:
     custom_jvm_params: "-Dsonar.java.source='value_you_want'"
     taskid: your-task-id
     skip_scan: true
-    SONAR_SCANNER_OPTS: "--add-opens java.base/sun.nio.ch=ALL-UNNAMED --add-opens java.base/java.io=ALL-UNNAMED"
+    sonar_scanner_java_opts: "--add-opens java.base/sun.nio.ch=ALL-UNNAMED --add-opens java.base/java.io=ALL-UNNAMED"
 ```
 
 # Secret Reference
@@ -102,7 +102,9 @@ Safety first, the host and token are stored in Drone Secrets.
 * `usingProperties`: Use the `sonar-project.properties` file in the root directory as sonar parameters. (Not including `sonar_host` and `sonar_token`.) Default value `false`.
 * `binaries`: Path to application binaries (-Dsonar.java.binaries=).
 * `sonar_config_file`: Use `sonar-project.properties` if available. Default value `false`.
-* `sonar_config_file_override`: Use `sonar-project.properties` if available and override host, login, or project key settings. Default value `false`.
+* `sonar_scanner_java_opts`: Preferred JVM options parameter for SonarScanner CLI 6+.
+* `sonar_scanner_opts`: Legacy alias kept for backward compatibility and internally mapped to `SONAR_SCANNER_JAVA_OPTS`.
+* `sonar_config_file_override`: Use `sonar-project.properties` if available and override host, token, or project key settings. Default value `false`.
 * `quality_gate_error_exit_code`: Specifies the "exit code" error when the quality gate fails. Default is `5`.
 
 # Javascript Parameters
@@ -134,5 +136,5 @@ sonar-scanner \
   -Dsonar.projectName=Harness/cie \
   -Dsonar.projectVersion=1.0 \
   -Dsonar.host.url=http://localhost:9000 \
-  -Dsonar.login=60878847cea1a31d817f0deee3daa7868c431433
+  -Dsonar.token=60878847cea1a31d817f0deee3daa7868c431433
 ```

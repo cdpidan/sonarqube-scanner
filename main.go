@@ -279,8 +279,13 @@ func main() {
 		},
 		cli.StringFlag{
 			Name:   "sonar_scanner_opts",
-			Usage:  "sonar scanner jvm ops",
+			Usage:  "legacy sonar scanner jvm opts alias, kept for compatibility",
 			EnvVar: "PLUGIN_SONAR_SCANNER_OPTS",
+		},
+		cli.StringFlag{
+			Name:   "sonar_scanner_java_opts",
+			Usage:  "sonar scanner java opts for SonarScanner CLI 6+",
+			EnvVar: "PLUGIN_SONAR_SCANNER_JAVA_OPTS",
 		},
 		cli.BoolFlag{
 			Name:   "sonar_config_file",
@@ -289,7 +294,7 @@ func main() {
 		},
 		cli.BoolFlag{
 			Name:   "sonar_config_file_override",
-			Usage:  "Use sonar-project.properties if available and override host, login or/and project key",
+			Usage:  "Use sonar-project.properties if available and override host, token or/and project key",
 			EnvVar: "PLUGIN_SONAR_CONFIG_FILE_OVERRIDE",
 		},
 		cli.IntFlag{
@@ -349,6 +354,7 @@ func run(c *cli.Context) {
 			WaitQualityGate:            c.Bool("wait_qualitygate"),
 			Workspace:                  c.String("workspace"),
 			SonarOPS:                   c.String("sonar_scanner_opts"),
+			SonarJavaOpts:              c.String("sonar_scanner_java_opts"),
 			UseSonarConfigFile:         c.Bool("sonar_config_file"),
 			UseSonarConfigFileOverride: c.Bool("sonar_config_file_override"),
 			QualityGateErrorExitCode:   c.Int("quality_gate_error_exit_code"),

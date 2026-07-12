@@ -1,3 +1,5 @@
 drone-sonar
 drone-sonar-scanner
 drone-plugin-sonar
+.gocache
+.gomodcache

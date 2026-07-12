@@ -1,4 +1,4 @@
-FROM golang:1.21-alpine as build
+FROM golang:1.25-alpine AS build
 RUN apk add --no-cache --update git
 RUN mkdir -p /go/src/github.com/diegopereiraeng/harness-cie-sonarqube-scanner
 WORKDIR /go/src/github.com/diegopereiraeng/harness-cie-sonarqube-scanner 
@@ -13,9 +13,9 @@ RUN go get github.com/urfave/cli
 RUN go get github.com/joho/godotenv
 RUN GOOS=linux GOARCH=amd64 CGO_ENABLED=0 go build -o harness-sonar
 
-FROM amazoncorretto:17.0.11-alpine3.19
+FROM amazoncorretto:21-alpine
 
-ARG SONAR_VERSION=5.0.1.3006
+ARG SONAR_VERSION=7.3.0.5189
 ARG SONAR_SCANNER_CLI=sonar-scanner-cli-${SONAR_VERSION}
 ARG SONAR_SCANNER=sonar-scanner-${SONAR_VERSION}
 
@@ -23,15 +23,16 @@ ARG SONAR_SCANNER=sonar-scanner-${SONAR_VERSION}
 #     && apt-get install -y nodejs curl \
 #     && apt-get clean
 
-RUN apk --no-cache --update add nodejs-current npm curl unzip git php python3 py3-pip maven gcc g++ make ruby ruby-dev perl
+# RUN apk --no-cache --update add nodejs-current npm curl unzip git php python3 py3-pip maven gcc g++ make ruby ruby-dev perl
 
 COPY --from=build /go/src/github.com/diegopereiraeng/harness-cie-sonarqube-scanner/harness-sonar /bin/
 WORKDIR /bin
 
-RUN curl https://binaries.sonarsource.com/Distribution/sonar-scanner-cli/${SONAR_SCANNER_CLI}.zip -so /bin/${SONAR_SCANNER_CLI}.zip
-RUN unzip ${SONAR_SCANNER_CLI}.zip \
-    && rm ${SONAR_SCANNER_CLI}.zip 
+RUN apk --no-cache --update add nodejs-current npm curl unzip git php python3 py3-pip maven gcc g++ make ruby ruby-dev perl \
+    && curl https://binaries.sonarsource.com/Distribution/sonar-scanner-cli/${SONAR_SCANNER_CLI}.zip -so /bin/${SONAR_SCANNER_CLI}.zip \
+    && unzip ${SONAR_SCANNER_CLI}.zip \
+    && rm ${SONAR_SCANNER_CLI}.zip
 
-ENV PATH $PATH:/bin/${SONAR_SCANNER}/bin
+ENV PATH=$PATH:/bin/${SONAR_SCANNER}/bin
 
-ENTRYPOINT /bin/harness-sonar
+ENTRYPOINT ["/bin/harness-sonar"]
