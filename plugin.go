@@ -17,6 +17,7 @@ import (
 	"strconv"
 	"strings"
 	"time"
+	"unicode/utf8"
 
 	"github.com/joho/godotenv"
 	"github.com/pelletier/go-toml"
@@ -455,10 +456,15 @@ func (p Plugin) Exec() error {
 			os.Exit(2)
 		}
 
+		projectName := repairUTF8Mojibake(p.Config.Name)
+		if projectName != p.Config.Name {
+			fmt.Println("Detected and repaired a UTF-8 encoding issue in sonar_name.")
+		}
+
 		// Map of potential configurations
 		configurations := map[string]string{
 			"-Dsonar.projectKey":                     p.Config.Key,
-			"-Dsonar.projectName":                    p.Config.Name,
+			"-Dsonar.projectName":                    projectName,
 			"-Dsonar.organization":                   p.Config.Organization,
 			"-Dsonar.scm.disabled":                   strconv.FormatBool(p.Config.SCMDisabled),
 			"-Dsonar.projectVersion":                 p.Config.Version,
@@ -689,6 +695,25 @@ func joinScannerOpts(values ...string) string {
 	}
 
 	return strings.Join(parts, " ")
+}
+
+// repairUTF8Mojibake repairs text whose UTF-8 bytes were decoded as ISO-8859-1.
+// Correct UTF-8 text (including Chinese project names) is left unchanged.
+func repairUTF8Mojibake(value string) string {
+	bytes := make([]byte, 0, len(value))
+	for _, char := range value {
+		if char > 0xff {
+			return value
+		}
+		bytes = append(bytes, byte(char))
+	}
+
+	repaired := string(bytes)
+	if !utf8.ValidString(repaired) {
+		return value
+	}
+
+	return repaired
 }
 
 func displayQualityGateStatus(status string, qualityEnabled bool) {

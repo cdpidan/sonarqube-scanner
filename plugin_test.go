@@ -39,6 +39,43 @@ func TestGetTask(t *testing.T) {
 	}
 }
 
+func TestRepairUTF8Mojibake(t *testing.T) {
+	tests := []struct {
+		name  string
+		input string
+		want  string
+	}{
+		{
+			name:  "repairs Chinese project name",
+			input: "ä¸­æ\u0096\u0087é¡¹ç\u009b®",
+			want:  "中文项目",
+		},
+		{
+			name:  "keeps correct Chinese project name",
+			input: "中文项目",
+			want:  "中文项目",
+		},
+		{
+			name:  "keeps ASCII project name",
+			input: "workflow-service",
+			want:  "workflow-service",
+		},
+		{
+			name:  "keeps valid Latin-1 project name",
+			input: "café",
+			want:  "café",
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			if got := repairUTF8Mojibake(test.input); got != test.want {
+				t.Fatalf("repairUTF8Mojibake(%q) = %q, want %q", test.input, got, test.want)
+			}
+		})
+	}
+}
+
 // func getTask(s string) {
 // 	panic("unimplemented")
 // }
