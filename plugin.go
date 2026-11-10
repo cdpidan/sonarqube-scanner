@@ -14,6 +14,7 @@ import (
 	"net/url"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"strconv"
 	"strings"
 	"time"
@@ -89,6 +90,7 @@ type (
 		Verbose                    string
 		CustomJvmParams            string
 		TaskId                     string
+		ScanOncePerDay             bool
 		SkipScan                   bool
 		WaitQualityGate            bool
 		Workspace                  string
@@ -420,8 +422,11 @@ func PreFlightGetLatestTaskID(config Config) (string, error) {
 }
 
 func (p Plugin) Exec() error {
-	// Check if the sonar-project.properties file exists in the current directory
+	// Check for sonar-project.properties in the scanner workspace.
 	sonarConfigFile := "sonar-project.properties"
+	if p.Config.Workspace != "" {
+		sonarConfigFile = filepath.Join(p.Config.Workspace, sonarConfigFile)
+	}
 
 	args := []string{}
 
@@ -541,6 +546,12 @@ func (p Plugin) Exec() error {
 	} else {
 		// Error checking the file
 		return fmt.Errorf("error checking configuration file: %v", err)
+	}
+
+	if p.Config.ScanOncePerDay && !p.Config.SkipScan && p.Config.TaskId == "" {
+		if p.skipDailyScan(args, time.Now()) {
+			return nil
+		}
 	}
 
 	if err := applyScannerJavaOpts(p.Config); err != nil {

@@ -149,6 +149,32 @@ spec:
             skip_scan: true
 ```
 
+### Daily scan limit
+
+Set `scan_once_per_day: true` (`PLUGIN_SCAN_ONCE_PER_DAY=true`, CLI `--scan_once_per_day`) to skip a scan when SonarQube already has an analysis for the same project and explicit SonarQube branch on the current calendar day in UTC+08:00 (Beijing time). The default is `false`.
+
+```yaml
+- name: sonarqube-scanner
+  image: harbor.xxx.com/devops/plugins/sonarqube-scanner:stable-java21
+  settings:
+    sonar_host:
+      from_secret: sonar_host
+    sonar_token:
+      from_secret: sonar_token
+    workspace: /drone/src
+    sonar_config_file: true
+    wait_qualitygate: false
+    scan_once_per_day: true
+```
+
+The plugin reads `sonar-project.properties` from the workspace (or `project.settings`) and applies the scanner's `-D` overrides before querying `/api/project_analyses/search?project=...&ps=1`. If `sonar.branch.name` is explicitly set, it is included in the query; otherwise the server's main branch is queried. Credentials use the same token-as-username Basic authentication as existing plugin API requests. The token must have permission to browse the project as well as submit analyses. A completed analysis counts even if its quality gate failed.
+
+An existing analysis today skips the entire plugin step successfully, including quality gate polling and report generation. No analysis or a missing project runs the scan. Timeouts, permission errors, invalid responses or unavailable query configuration log a warning and continue scanning. Explicit PR analysis and externally supplied `SONARQUBE_SCANNER_PARAMS` bypass this optimization. Existing `skip_scan` / `taskid` quality gate checks retain their behavior.
+
+This is a best-effort optimization, not a distributed lock. Concurrent pipelines and reports still awaiting SonarQube background processing may scan more than once. Failed or unfinished analyses do not consume the day's scan. No external daily marker is stored.
+
+Rebuild and publish the plugin image before enabling this setting in business repositories. Prefer an immutable version tag (or force an image pull) so runners do not reuse an old cached `stable-java21` image.
+
 ### DRONE Pipeline example
 ```yaml
 kind: pipeline
@@ -287,6 +313,19 @@ Use Global analysis tokens
 <img src="https://github.com/drone-plugins/sonarqube-scanner/blob/main/global-analysis-token.png" alt="Plugin Configuration" width="400"/>
 
 ### Build Process
+
+Build the Java 21 image locally (Docker must be installed and running):
+
+```bash
+./build.sh
+# Or choose a new version tag:
+./build.sh harbor.jwell56.com/devops/plugins/sonarqube-scanner:daily-scan-java21
+```
+
+The default image is `harbor.jwell56.com/devops/plugins/sonarqube-scanner:stable-java21`.
+The script works from any current directory, uses the repository Dockerfile, and
+builds for `linux/amd64` to match its Go binary. It does not push the image.
+
 
 build go binary file: 
 ```

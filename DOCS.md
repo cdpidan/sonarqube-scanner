@@ -45,6 +45,7 @@ steps:
     usingProperties: false
     binaries: .
     sonar_config_file: true
+    scan_once_per_day: true
     sonar_config_file_override: false
     quality_gate_error_exit_code: 5
     sonar_qualitygate_timeout: 300
@@ -101,6 +102,7 @@ Safety first, the host and token are stored in Drone Secrets.
 * `branchAnalysis`: Pass currently analyzed branch to SonarQube. (Must not be active for initial scan!) Default value `false`.
 * `usingProperties`: Use the `sonar-project.properties` file in the root directory as sonar parameters. (Not including `sonar_host` and `sonar_token`.) Default value `false`.
 * `binaries`: Path to application binaries (-Dsonar.java.binaries=).
+* `scan_once_per_day`: Skip scans when this project/explicit SonarQube branch already has an analysis today in Beijing time (UTC+08:00). Default `false`; environment `PLUGIN_SCAN_ONCE_PER_DAY`. API errors continue scanning; PRs bypass the limit. Concurrent/unfinished scans may still duplicate. See [daily scan limit](README.md#daily-scan-limit).
 * `sonar_config_file`: Use `sonar-project.properties` if available. Default value `false`.
 * `sonar_scanner_java_opts`: Preferred JVM options parameter for SonarScanner CLI 6+.
 * `sonar_scanner_opts`: Legacy alias kept for backward compatibility and internally mapped to `SONAR_SCANNER_JAVA_OPTS`.

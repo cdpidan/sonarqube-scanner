@@ -262,6 +262,11 @@ func main() {
 			EnvVar: "PLUGIN_TASKID",
 		},
 		cli.BoolFlag{
+			Name:   "scan_once_per_day",
+			Usage:  "Skip scanning when the project already has an analysis today (UTC+08:00)",
+			EnvVar: "PLUGIN_SCAN_ONCE_PER_DAY",
+		},
+		cli.BoolFlag{
 			Name:   "skip_scan",
 			Usage:  "Skip the SonarQube scan",
 			EnvVar: "PLUGIN_SKIP_SCAN",
@@ -350,6 +355,7 @@ func run(c *cli.Context) {
 			Verbose:                    c.String("verbose"),
 			CustomJvmParams:            c.String("custom_jvm_params"),
 			TaskId:                     c.String("taskid"),
+			ScanOncePerDay:             c.Bool("scan_once_per_day"),
 			SkipScan:                   c.Bool("skip_scan"),
 			WaitQualityGate:            c.Bool("wait_qualitygate"),
 			Workspace:                  c.String("workspace"),
